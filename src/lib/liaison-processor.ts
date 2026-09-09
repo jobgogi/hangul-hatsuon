@@ -41,6 +41,25 @@ export class LiaisonProcessor {
       const next = result[i + 1];
       const isNextVowelStart = next !== undefined && next.cho === 'ㅇ';
 
+      // ㄹ받침 뒤에 오는 ㄴ초성: ㄴ이 ㄹ로 동화된다 (유음화의 반대 방향). 예: 설날→[설랄]
+      if (next !== undefined && next.cho === 'ㄴ' && cur.jong === 'ㄹ') {
+        next.cho = 'ㄹ';
+        continue;
+      }
+
+      // ㄴ받침 뒤에 오는 ㄹ초성: ㄴ이 ㄹ로 동화된다 (유음화). 예: 신라→[실라]
+      if (next !== undefined && next.cho === 'ㄹ' && cur.jong === 'ㄴ') {
+        cur.jong = 'ㄹ';
+        continue;
+      }
+
+      // ㅁ/ㅇ받침 뒤에 오는 ㄹ초성: ㄹ이 ㄴ으로 바뀐다 (유음의 비음화).
+      // 예: 공룡→[공뇽], 종로→[종노], 대통령→[대통녕]. 받침 자체는 그대로 유지된다.
+      if (next !== undefined && next.cho === 'ㄹ' && (cur.jong === 'ㅁ' || cur.jong === 'ㅇ')) {
+        next.cho = 'ㄴ';
+        continue;
+      }
+
       // ㅎ 받침: 모음 앞에서는 다음 초성으로 이동하지 않고 그냥 탈락한다.
       if (cur.jong === 'ㅎ' && isNextVowelStart) {
         cur.jong = '';
