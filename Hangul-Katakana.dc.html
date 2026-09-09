@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-jp.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #FFFFFF; -webkit-font-smoothing: antialiased; }
+  a { color: #2563EB; text-decoration: none; }
+  a:hover { color: #1D4ED8; text-decoration: underline; }
+  *:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+</style>
+</helmet>
+<div style="font-family: 'Pretendard JP', Pretendard, system-ui, sans-serif; color: #0F172A; max-width: 960px; margin: 0 auto; padding: 64px 24px 96px; line-height: 1.65;">
+
+  <header style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 48px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #64748B; text-transform: uppercase; letter-spacing: 0.06em;">Hangul → Katakana</div>
+    <h1 style="margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.01em;">ハングルの発音をカタカナで</h1>
+    <p style="margin: 0; font-size: 16px; color: #475569; max-width: 640px; text-wrap: pretty;">ハングルを入力すると、発音変化（連音・鼻音化・濃音化）を反映したカタカナ読みを表示します。音声は Web Speech API の韓国語音声で再生します。</p>
+  </header>
+
+  <section style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+    <label for="hangul-input" style="display: block; font-size: 13px; font-weight: 500; color: #475569; margin-bottom: 8px;">ハングルを入力</label>
+    <textarea id="hangul-input" rows="3" placeholder="예: 안녕하세요" value="{{ text }}" onChange="{{ onInput }}" style="width: 100%; box-sizing: border-box; resize: vertical; font-family: 'Pretendard JP', Pretendard, sans-serif; font-size: 20px; line-height: 1.6; color: #0F172A; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;"></textarea>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center;">
+      <span style="font-size: 12px; color: #94A3B8; margin-right: 4px;">例</span>
+      <sc-for list="{{ samples }}" as="s" hint-placeholder-count="5">
+        <button type="button" onClick="{{ s.pick }}" style="font-family: inherit; font-size: 13px; color: #1D4ED8; background: #DBEAFE; border: none; border-radius: 999px; padding: 5px 12px; cursor: pointer;">{{ s.label }}</button>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 13px; font-weight: 500; color: #475569;">カタカナ発音</div>
+      <div style="font-size: 30px; font-weight: 500; line-height: 1.4; text-wrap: pretty; min-height: 42px;">{{ kanaAll }}</div>
+    </div>
+
+    <sc-if value="{{ showRomaja }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 13px; font-weight: 500; color: #475569;">ローマ字（発音表記）</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #475569; min-height: 22px;">{{ romajaAll }}</div>
+      </div>
+    </sc-if>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid #E2E8F0; padding-top: 20px;">
+      <button type="button" onClick="{{ speakAll }}" style="font-family: inherit; font-size: 14px; font-weight: 500; color: #FFFFFF; background: #2563EB; border: none; border-radius: 8px; padding: 10px 18px; cursor: pointer; transition: background 150ms ease-out;" style-hover="background: #1D4ED8;">韓国語で再生</button>
+      <button type="button" onClick="{{ stop }}" style="font-family: inherit; font-size: 14px; font-weight: 500; color: #334155; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 18px; cursor: pointer; transition: border-color 150ms ease-out;" style-hover="border-color: #93C5FD;">停止</button>
+      <button type="button" onClick="{{ copyKana }}" style="font-family: inherit; font-size: 14px; font-weight: 500; color: #334155; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 18px; cursor: pointer; transition: border-color 150ms ease-out;" style-hover="border-color: #93C5FD;">{{ copyLabel }}</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+        <span style="font-size: 12px; color: #64748B;">速さ</span>
+        <input type="range" min="0.5" max="1.3" step="0.05" value="{{ rate }}" onChange="{{ onRate }}" style="width: 120px; accent-color: #2563EB;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #64748B; width: 32px;">{{ rateLabel }}</span>
+      </div>
+    </div>
+
+    <div style="font-size: 12px; color: #94A3B8;">{{ voiceNote }}</div>
+  </section>
+
+  <sc-if value="{{ showSyllables }}" hint-placeholder-val="{{ true }}">
+    <section style="display: flex; flex-direction: column; gap: 24px;">
+      <div style="font-size: 13px; font-weight: 500; color: #475569;">音節ごとの読み（クリックで再生）</div>
+      <sc-for list="{{ words }}" as="w" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 10px; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px 18px; transition: border-color 150ms ease-out;" style-hover="border-color: #93C5FD;">
+          <div style="display: flex; align-items: baseline; gap: 12px;">
+            <span style="font-size: 15px; font-weight: 600;">{{ w.text }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #94A3B8;">{{ w.kana }}</span>
+            <button type="button" onClick="{{ w.speak }}" style="margin-left: auto; font-family: inherit; font-size: 12px; color: #334155; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 999px; padding: 4px 12px; cursor: pointer;" style-hover="border-color: #93C5FD;">再生</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <sc-for list="{{ w.syllables }}" as="sy" hint-placeholder-count="4">
+              <button type="button" onClick="{{ sy.speak }}" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; font-family: inherit; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: border-color 150ms ease-out;" style-hover="border-color: #93C5FD;">
+                <span style="font-size: 20px; font-weight: 500; color: #0F172A;">{{ sy.h }}</span>
+                <span style="font-size: 14px; color: #2563EB;">{{ sy.k }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #94A3B8;">{{ sy.r }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+  </sc-if>
+
+  <p style="margin: 48px 0 0; font-size: 12px; color: #94A3B8; text-wrap: pretty;">カタカナは近似表記です。ㅓ / ㅗ、ㅡ / ㅜ、평음 / 격음 の区別はカタカナでは表せないため、実際の音は再生音声で確認してください。</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;speechRate&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0.5,&quot;max&quot;:1.3,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;},&quot;showRomaja&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showSyllables&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const CHO = ['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
+const JUNG = ['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
+const JONG = ['','g','kk','gs','n','nj','nh','d','l','lg','lm','lb','ls','lt','lp','lh','m','b','bs','s','ss','ng','j','ch','k','t','p','h'];
+
+const ROWS = {
+  k: ['カ','キ','ク','ケ','コ'], g: ['ガ','ギ','グ','ゲ','ゴ'],
+  n: ['ナ','ニ','ヌ','ネ','ノ'], t: ['タ','ティ','トゥ','テ','ト'],
+  d: ['ダ','ディ','ドゥ','デ','ド'], r: ['ラ','リ','ル','レ','ロ'],
+  m: ['マ','ミ','ム','メ','モ'], p: ['パ','ピ','プ','ペ','ポ'],
+  b: ['バ','ビ','ブ','ベ','ボ'], s: ['サ','シ','ス','セ','ソ'],
+  ch: ['チャ','チ','チュ','チェ','チョ'], j: ['ジャ','ジ','ジュ','ジェ','ジョ'],
+  h: ['ハ','ヒ','フ','ヘ','ホ'], none: ['ア','イ','ウ','エ','オ']
+};
+const IDX = { a: 0, i: 1, u: 2, e: 3, o: 4 };
+const SMALL_W = { a: 'ァ', i: 'ィ', u: '', e: 'ェ', o: 'ォ' };
+const SMALL_Y = { a: 'ャ', i: '', u: 'ュ', e: 'ェ', o: 'ョ' };
+const NONE_Y = { a: 'ヤ', i: 'イ', u: 'ユ', e: 'イェ', o: 'ヨ' };
+const NONE_W = { a: 'ワ', i: 'ウィ', u: 'ウ', e: 'ウェ', o: 'ウォ' };
+// vowel -> [core, glide]
+const VOW = {
+  a: ['a',''], ae: ['e',''], ya: ['a','y'], yae: ['e','y'], eo: ['o',''],
+  e: ['e',''], yeo: ['o','y'], ye: ['e','y'], o: ['o',''], wa: ['a','w'],
+  wae: ['e','w'], oe: ['e','w'], yo: ['o','y'], u: ['u',''], wo: ['o','w'],
+  we: ['e','w'], wi: ['i','w'], yu: ['u','y'], eu: ['u',''], ui: ['i','w'], i: ['i','']
+};
+const CODA_KANA = { g: 'ク', n: 'ン', d: 'ッ', l: 'ル', m: 'ム', b: 'プ', ng: 'ン' };
+const TENSE = { kk: 1, tt: 1, pp: 1, ss: 1, jj: 1 };
+const SPLIT_CODA = { gs: ['g','s'], nj: ['n','j'], nh: ['n','h'], lg: ['l','g'], lm: ['l','m'], lb: ['l','b'], ls: ['l','s'], lt: ['l','t'], lp: ['l','p'], lh: ['l','h'], bs: ['b','s'] };
+const NEUTRAL = { kk: 'g', k: 'g', s: 'd', ss: 'd', j: 'd', ch: 'd', t: 'd', h: 'd', p: 'b', gs: 'g', nj: 'n', nh: 'n', lg: 'g', lm: 'm', lb: 'l', ls: 'l', lt: 'l', lp: 'p', lh: 'l', bs: 'b' };
+const ASPIRATE = { g: 'k', d: 't', b: 'p', j: 'ch' };
+const TENSIFY = { g: 'kk', d: 'tt', b: 'pp', s: 'ss', j: 'jj' };
+
+function decompose(ch) {
+  const c = ch.charCodeAt(0) - 0xac00;
+  if (c < 0 || c > 11171) return null;
+  return { cho: CHO[Math.floor(c / 588)], jung: JUNG[Math.floor((c % 588) / 28)], jong: JONG[c % 28], h: ch };
+}
+
+function applyRules(sy) {
+  for (let i = 0; i < sy.length; i++) {
+    const cur = sy[i], next = sy[i + 1];
+    if (!next) { cur.jong = cur.jong ? (NEUTRAL[cur.jong] || cur.jong) : ''; continue; }
+    // liaison into ㅇ
+    if (cur.jong && next.cho === '') {
+      if (SPLIT_CODA[cur.jong]) { const p = SPLIT_CODA[cur.jong]; cur.jong = p[0]; next.cho = p[1]; next.liaised = true; }
+      else if (cur.jong !== 'ng') { next.cho = cur.jong; cur.jong = ''; next.liaised = true; }
+    }
+    let coda = cur.jong ? (NEUTRAL[cur.jong] || cur.jong) : '';
+    // ㅎ interactions
+    if (cur.jong === 'h' || cur.jong === 'nh' || cur.jong === 'lh') {
+      coda = cur.jong === 'nh' ? 'n' : (cur.jong === 'lh' ? 'l' : '');
+      if (ASPIRATE[next.cho]) next.cho = ASPIRATE[next.cho];
+      else if (next.cho === 's') next.cho = 'ss';
+    } else if (next.cho === 'h' && (coda === 'g' || coda === 'd' || coda === 'b')) {
+      next.cho = ASPIRATE[coda]; coda = '';
+    }
+    // nasalization
+    if ((coda === 'g' || coda === 'd' || coda === 'b') && (next.cho === 'n' || next.cho === 'm')) {
+      coda = coda === 'g' ? 'ng' : (coda === 'd' ? 'n' : 'm');
+    } else if ((coda === 'ng' || coda === 'm') && next.cho === 'r') { next.cho = 'n'; }
+    else if (coda === 'n' && next.cho === 'r') { coda = 'l'; next.cho = 'r'; }
+    else if (coda === 'l' && next.cho === 'n') { next.cho = 'r'; }
+    // tensification after obstruent
+    if ((coda === 'g' || coda === 'd' || coda === 'b') && TENSIFY[next.cho]) next.cho = TENSIFY[next.cho];
+    cur.jong = coda;
+  }
+  return sy;
+}
+
+function kanaFor(sy, i, arr) {
+  const prev = i > 0 ? arr[i - 1] : null;
+  const prevCoda = prev ? prev.jong : null;
+  const voicedPos = prev !== null && (prevCoda === '' || prevCoda === 'n' || prevCoda === 'l' || prevCoda === 'm' || prevCoda === 'ng');
+  let cho = sy.cho, row;
+  if (cho === '') row = 'none';
+  else if (cho === 'g') row = voicedPos ? 'g' : 'k';
+  else if (cho === 'd') row = voicedPos ? 'd' : 't';
+  else if (cho === 'b') row = voicedPos ? 'b' : 'p';
+  else if (cho === 'j') row = voicedPos ? 'j' : 'ch';
+  else if (cho === 'kk' || cho === 'k') row = 'k';
+  else if (cho === 'tt' || cho === 't') row = 't';
+  else if (cho === 'pp' || cho === 'p') row = 'p';
+  else if (cho === 'jj' || cho === 'ch') row = 'ch';
+  else if (cho === 'ss') row = 's';
+  else row = cho;
+  const v = VOW[sy.jung] || ['a',''];
+  const core = v[0], glide = v[1];
+  const R = ROWS[row] || ROWS.none;
+  let out;
+  if (glide === 'y') out = row === 'none' ? NONE_Y[core] : (SMALL_Y[core] ? R[IDX.i] + SMALL_Y[core] : R[IDX.i]);
+  else if (glide === 'w') out = row === 'none' ? NONE_W[core] : (SMALL_W[core] ? R[IDX.u] + SMALL_W[core] : R[IDX.u]);
+  else out = R[IDX[core]];
+  let pre = '';
+  if (TENSE[cho] && prev && prevCoda === '') {
+    if (sy.liaised) pre = 'ッ'; else out = 'ッ' + out;
+  }
+  let coda = '';
+  if (sy.jong) {
+    coda = CODA_KANA[sy.jong] || '';
+    const nx = arr[i + 1];
+    if (nx) {
+      const n0 = nx.cho;
+      if (sy.jong === 'g' && (n0 === 'g' || n0 === 'kk' || n0 === 'k')) coda = 'ッ';
+      if (sy.jong === 'b' && (n0 === 'b' || n0 === 'pp' || n0 === 'p')) coda = 'ッ';
+      if (sy.jong === 'l' && n0 === 'r') coda = 'ル';
+    }
+  }
+  return { pre: pre, main: out + coda };
+}
+
+const ROMA_JONG = { g: 'k', n: 'n', d: 't', l: 'l', m: 'm', b: 'p', ng: 'ng' };
+const DETENSE = { kk: 'k', tt: 't', pp: 'p', ss: 's', jj: 'j' };
+
+function romaFor(sy, i, arr) {
+  const prev = i > 0 ? arr[i - 1] : null;
+  const prevStop = prev && (prev.jong === 'g' || prev.jong === 'd' || prev.jong === 'b');
+  let cho = sy.cho;
+  let pre = '';
+  if (TENSE[cho]) {
+    if (prevStop) cho = DETENSE[cho];
+    else if (sy.liaised && prev && prev.jong === '') { pre = DETENSE[cho]; cho = DETENSE[cho]; }
+  }
+  return { pre: pre, main: cho + sy.jung + (sy.jong ? (ROMA_JONG[sy.jong] || sy.jong) : '') };
+}
+
+function convertWord(word) {
+  const parts = [];
+  let buf = [];
+  const flush = () => { if (buf.length) { parts.push({ hangul: true, sy: applyRules(buf) }); buf = []; } };
+  for (const ch of word) {
+    const d = decompose(ch);
+    if (d) buf.push(d);
+    else { flush(); parts.push({ hangul: false, ch }); }
+  }
+  flush();
+  const syllables = [];
+  let kana = '';
+  for (const p of parts) {
+    if (!p.hangul) { syllables.push({ h: p.ch, k: p.ch, r: '' }); kana += p.ch; continue; }
+    p.sy.forEach((s, i, arr) => {
+      const k = kanaFor(s, i, arr);
+      const rm = romaFor(s, i, arr);
+      const last = syllables[syllables.length - 1];
+      if (last && (k.pre || rm.pre)) { last.k += k.pre; last.r += rm.pre; }
+      syllables.push({ h: s.h, k: k.main, r: rm.main });
+      kana += k.pre + k.main;
+    });
+  }
+  return { kana, syllables };
+}
+
+const SAMPLES = ['안녕하세요', '감사합니다', '한국어 공부', '김치찌개', '학교에 갑니다', '사랑해요'];
+
+class Component extends DCLogic {
+  state = { text: '안녕하세요\n한국어 공부 재미있어요', rate: null, copied: false, voiceReady: false, hasKo: false };
+
+  componentDidMount() {
+    if (typeof speechSynthesis === 'undefined') { this.setState({ voiceReady: true }); return; }
+    const check = () => {
+      const vs = speechSynthesis.getVoices();
+      if (vs.length) this.setState({ voiceReady: true, hasKo: vs.some(v => /^ko/i.test(v.lang)) });
+    };
+    check();
+    speechSynthesis.onvoiceschanged = check;
+  }
+
+  rate() { return this.state.rate ?? this.props.speechRate ?? 0.9; }
+
+  speak(text) {
+    if (typeof speechSynthesis === 'undefined' || !text.trim()) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR';
+    u.rate = this.rate();
+    const ko = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang));
+    if (ko) u.voice = ko;
+    speechSynthesis.speak(u);
+  }
+
+  renderVals() {
+    const text = this.state.text;
+    const words = [];
+    let kanaAll = '', romajaAll = '';
+    text.split(/\n/).forEach((line, li) => {
+      if (li > 0) { kanaAll += ' / '; romajaAll += ' / '; }
+      line.split(/\s+/).filter(Boolean).forEach((w, wi) => {
+        const c = convertWord(w);
+        if (wi > 0) { kanaAll += ' '; romajaAll += ' '; }
+        kanaAll += c.kana;
+        romajaAll += c.syllables.map(s => s.r).join('');
+        words.push({
+          text: w, kana: c.kana, speak: () => this.speak(w),
+          syllables: c.syllables.map(s => ({ ...s, speak: () => this.speak(s.h) }))
+        });
+      });
+    });
+    const r = this.rate();
+    return {
+      text, kanaAll, romajaAll, words,
+      rate: r, rateLabel: r.toFixed(2).replace(/0$/, ''),
+      showRomaja: this.props.showRomaja ?? true,
+      showSyllables: this.props.showSyllables ?? true,
+      copyLabel: this.state.copied ? 'コピーしました' : 'カタカナをコピー',
+      voiceNote: typeof speechSynthesis === 'undefined'
+        ? 'このブラウザは Web Speech API に対応していません。'
+        : (this.state.voiceReady && !this.state.hasKo
+            ? '韓国語（ko-KR）の音声が見つかりません。OS に韓国語の音声を追加すると再生できます。'
+            : '音声は端末にインストールされた韓国語音声で再生されます。'),
+      samples: SAMPLES.map(s => ({ label: s, pick: () => this.setState({ text: s }) })),
+      onInput: e => this.setState({ text: e.target.value }),
+      onRate: e => this.setState({ rate: parseFloat(e.target.value) }),
+      speakAll: () => this.speak(text.replace(/\n/g, ' ')),
+      stop: () => { if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel(); },
+      copyKana: () => {
+        if (navigator.clipboard) navigator.clipboard.writeText(kanaAll);
+        this.setState({ copied: true });
+        setTimeout(() => this.setState({ copied: false }), 1600);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
