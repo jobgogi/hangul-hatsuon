@@ -34,14 +34,19 @@ export function useHangulToKana() {
     }, 1600);
   }
 
-  const handleClickPlay = (text: string) => {
+  const handleClickPlay = (text: string, lang: 'ko-KR' | 'ja-JP' = 'ko-KR') => {
     if (typeof speechSynthesis === 'undefined' || !text.trim()) return;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR';
+    u.lang = lang;
     u.rate = rate;
-    const ko = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang));
-    if (ko) u.voice = ko;
+
+    const reg = new RegExp(`^${lang.substring(0, 2)}`, 'i');
+    const voice = speechSynthesis.getVoices().find(v => reg.test(v.lang));
+
+    if (voice) {
+      u.voice = voice;
+    }
     speechSynthesis.speak(u);
   }
 
