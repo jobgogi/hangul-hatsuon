@@ -1,13 +1,7 @@
-import type { Syllable } from './types';
+import type { Syllable, SyllableReading } from './types';
 import { HangulDecomposer } from './hangul-decomposer';
 import { LiaisonProcessor } from './liaison-processor';
 import { SyllableKanaMapper } from './syllable-kana-mapper';
-
-export interface SyllableReading {
-  h: string; // 원문 음절
-  k: string; // 가타카나
-  r: string; // 로마자
-}
 
 interface LineDecomposed {
   chars: string[];
@@ -23,18 +17,6 @@ interface LineDecomposed {
  * 다음 줄의 시작은 서로 이어진 문장이 아니라고 보고, 줄 단위로 각각 분해·연음 처리한다.
  */
 export class HangulToKatakanaConverter {
-  static convert(text: string, options: 'kana' | 'romaji' = 'kana'): string {
-    const lines = this.splitLines(text).map(line => this.textDecomposed(line));
-
-    const convertedLines = lines.map(line => {
-      const converted =
-        options === 'kana' ? this.convertToKana(line.liaised) : this.convertToRomaji(line.liaised);
-      return this.merge(line.chars, line.syllableIndices, converted);
-    });
-
-    return convertedLines.join('\n');
-  }
-
   static convertAll(text: string): { kana: string; romaji: string; syllables: SyllableReading[][] } {
     const lines = this.splitLines(text).map(line => this.textDecomposed(line));
 
