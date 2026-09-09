@@ -98,8 +98,8 @@ function App() {
                 <button
                   className="word-card__play word-card__play:hover"
                   onClick={() => {
-                    const text = syllable.reduce((ph, s) => (ph + s.h), '');
-                    handleClickPlay(text);
+                    const text = syllable.reduce((ph, s) => (ph + s.k), '');
+                    handleClickPlay(text, 'ja-JP');
                   }}
                   >
                     再生
