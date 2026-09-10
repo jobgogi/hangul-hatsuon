@@ -102,7 +102,7 @@ function App() {
                     handleClickPlay(text, 'ja-JP');
                   }}
                   >
-                    再生
+                    カタカナで再生
                 </button>
               </div>
               <div className="syllable-grid">
@@ -113,7 +113,7 @@ function App() {
                       key={i}
                       {...s} 
                       onClick={() => {
-                        handleClickPlay(s.h);
+                        handleClickPlay(s.k, 'ja-JP');
                       }} 
                     />
                     : <div key={i} className="syllable-chip syllable-chip-blank"></div>
