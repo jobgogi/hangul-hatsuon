@@ -1,75 +1,49 @@
-# React + TypeScript + Vite
+# ハングル発音（hangul-hatsuon）
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[日本語](./README.md) | [한국어](./README.ko.md)
 
-Currently, two official plugins are available:
+ハングルを読みにくい日本人向けに、韓国語の文章をカタカナ発音・ローマ字表記に変換して見せる、ブラウザだけで動くツールです。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+デモ: https://jobgogi.github.io/hangul-hatsuon/
 
-## React Compiler
+## 主な機能
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. 入力したハングルの文章を、韓国語の音韻規則（連音・鼻音化・激音化など）を適用したうえでカタカナおよびローマ字の発音に変換する。
+2. Web Speech APIのTTSで、原文を韓国語（`ko-KR`）として再生できる。
+3. 文章を音節ごとに分割し、それぞれのカタカナ発音を並べて表示することで、どの文字がどう読まれているか把握しやすくする。
+4. 各音節（または単語）のカタカナ表記を、日本語（`ja-JP`）のTTSでそのまま再生し、実際にどう聞こえるか確認できる。
 
-## Expanding the ESLint configuration
+カタカナ表記はあくまで近似です。ㅓ/ㅗ、ㅡ/ㅜ、平音/激音の区別はカタカナで表現できないため、正確な発音は再生音声で確認してください。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 使い方
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. テキストエリアにハングルの文章を入力する（サンプルタグをクリックしてもよい）。
+2. カタカナ発音・ローマ字表記が自動的に表示される。
+3. 「韓国語で再生」で原文の音声を、音節カードの「カタカナで再生」でカタカナ読みの音声を確認する。
+4. 「カタカナをコピー」で変換結果をクリップボードにコピーできる。
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+TTSはブラウザ・OSにインストールされた音声（韓国語／日本語）に依存します。対応する音声が無い環境では再生できません。
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 技術スタック
 
+- React 19 + TypeScript + Vite
+- ESLint（`eslint.config.js`）
+- Vitest（`src/lib/`の変換ロジックのユニットテスト）
+- GitHub Pages（`gh-pages`パッケージで`deploy`ブランチに公開）
+
+## 開発
+
+```bash
+npm install
+npm run dev       # 開発サーバー起動
+npm run build     # 型チェック + ビルド
+npm run lint      # ESLint
+npm test          # src/lib/ のユニットテスト（Vitest）
+npm run preview   # 本番ビルドのプレビュー
+npm run deploy    # ビルドして deploy ブランチに公開
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## ドキュメント
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+- 変換ロジックのアーキテクチャ・拡張方法: [CLAUDE.md](./CLAUDE.md)
+- 既知の制約・今後の改善点などの引き継ぎ情報: [HANDOFF.md](./HANDOFF.md)（[한국어](./HANDOFF.ko.md)）
