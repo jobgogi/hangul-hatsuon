@@ -10,4 +10,11 @@ export const KNOWN_WORDS: Record<string, { kana: string; romaji: string }> = {
   '찌개': { kana: 'チゲ', romaji: 'chige' },
   '짜장면': { kana: 'チャジャンミョン', romaji: 'chajanmyon' },
   '김치': { kana: 'キムチ', romaji: 'kimuchi' },
+  '떡볶이': { kana: 'トッポッキ', romaji: 'toppokki' },
+  '비빔밥': { kana: 'ビビンバ', romaji: 'bibinba' },
+  '불고기': { kana: 'プルコギ', romaji: 'purukogi' },
+  '김밥': { kana: 'キンパ', romaji: 'kinpa' },
+  '삼계탕': { kana: 'サムゲタン', romaji: 'samugetan' },
+  '잡채': { kana: 'チャプチェ', romaji: 'chapuche' },
+  '삼겹살': { kana: 'サムギョプサル', romaji: 'samugyopusaru' },
 };
